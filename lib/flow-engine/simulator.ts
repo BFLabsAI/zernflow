@@ -116,17 +116,22 @@ export function simulateFlow(
   // Simulate trigger matching
   const triggerData = triggerNode.data as Record<string, unknown>;
   const triggerType = (triggerData.triggerType as string) || "keyword";
-  const keywords = (triggerData.keywords as string[]) || [];
+  // Keywords are stored as { value, matchType } objects by the trigger panel, but
+  // older flows / templates may store plain strings. Normalize to strings up front
+  // so matching, the result payload, and the error log render real keywords instead
+  // of "[object Object]".
+  const rawKeywords =
+    (triggerData.keywords as Array<string | { value: string }>) || [];
+  const keywords = rawKeywords
+    .map((k) => (typeof k === "string" ? k : k?.value ?? ""))
+    .filter((k) => k.length > 0);
   let triggerMatched = false;
 
   if (triggerType === "keyword") {
     const msg = config.incomingMessage.toLowerCase();
     triggerMatched =
       keywords.length === 0 ||
-      keywords.some((k) => {
-        const kw = typeof k === "string" ? k : (k as { value: string }).value;
-        return msg.includes(kw.toLowerCase());
-      });
+      keywords.some((k) => msg.includes(k.toLowerCase()));
   } else if (triggerType === "welcome" || triggerType === "default") {
     triggerMatched = true;
   }

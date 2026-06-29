@@ -42,6 +42,12 @@ export function ConversationList({
   const [conversations, setConversations] = useState(initialConversations);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ConversationStatus | "all">("open");
+  // Relative timestamps depend on the client's clock/locale, which differ from the
+  // server's during SSR and trigger a hydration mismatch (React #418, which crashes
+  // the inbox in production). Defer time rendering until after mount so the server
+  // and the first client render agree.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setConversations(initialConversations);
@@ -192,8 +198,11 @@ export function ConversationList({
                   <p className="truncate text-sm font-medium">
                     {conversation.contacts?.display_name ?? "Unknown"}
                   </p>
-                  <span className="flex-shrink-0 text-[11px] text-muted-foreground">
-                    {formatTime(conversation.last_message_at)}
+                  <span
+                    suppressHydrationWarning
+                    className="flex-shrink-0 text-[11px] text-muted-foreground"
+                  >
+                    {mounted ? formatTime(conversation.last_message_at) : ""}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
