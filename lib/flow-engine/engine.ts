@@ -350,9 +350,14 @@ async function executeSendMessage(
     const text = interpolateVariables(adapted.text, context.variables || {});
 
     try {
-      // Send via Zernio REST API
-      const attachments = adapted.imageUrl
-        ? [{ type: "image", url: adapted.imageUrl }]
+      // Media (image/video/audio) is platform-agnostic, so read it from the raw
+      // message. `mediaUrl` + `mediaType` supersede the legacy image-only `imageUrl`.
+      const rawMsg = msg as { mediaUrl?: string; mediaType?: string; imageUrl?: string };
+      const mediaUrl = rawMsg.mediaUrl || rawMsg.imageUrl;
+      const mediaType = rawMsg.mediaType || (rawMsg.imageUrl ? "image" : undefined);
+
+      const attachments = mediaUrl
+        ? [{ type: mediaType || "image", url: mediaUrl }]
         : undefined;
 
       // Build the API body with rich messaging fields
@@ -360,6 +365,13 @@ async function executeSendMessage(
         accountId: lateAccountId,
         message: text,
       };
+      // Actually send the media to the recipient. Previously the attachment was only
+      // stored locally and never included in the send body, so flow media never
+      // reached the contact.
+      if (mediaUrl) {
+        body.attachmentUrl = mediaUrl;
+        body.attachmentType = mediaType || "image";
+      }
 
       if (adapted.buttons?.length) {
         body.buttons = adapted.buttons;
