@@ -30,6 +30,10 @@ interface Carousel {
 interface Message {
   text?: string;
   imageUrl?: string;
+  // Media attachment. mediaType + mediaUrl supersede the legacy image-only imageUrl
+  // and let a message send an image, video, or audio file.
+  mediaUrl?: string;
+  mediaType?: "image" | "video" | "audio";
   quickReplies?: QuickReply[];
   buttons?: Button[];
   carousel?: Carousel;
@@ -270,21 +274,46 @@ function MessageEditor({
               <VariableHint />
             </div>
 
-            {/* Image URL */}
+            {/* Media (image / video / audio) */}
             <div>
               <div className="mb-1.5 flex items-center gap-1.5">
                 <Image className="h-3 w-3 text-muted-foreground/60" />
-                <label className="text-xs font-medium text-muted-foreground">Image URL</label>
+                <label className="text-xs font-medium text-muted-foreground">Media URL</label>
               </div>
-              <input
-                type="url"
-                value={message.imageUrl || ""}
-                onChange={(e) =>
-                  onChange({ ...message, imageUrl: e.target.value || undefined })
-                }
-                placeholder="https://example.com/image.png"
-                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={message.mediaType || "image"}
+                  onChange={(e) =>
+                    onChange({
+                      ...message,
+                      mediaType: e.target.value as "image" | "video" | "audio",
+                    })
+                  }
+                  className="rounded-lg border border-border bg-card px-2 py-2 text-sm text-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="image">Image</option>
+                  <option value="video">Video</option>
+                  <option value="audio">Audio</option>
+                </select>
+                <input
+                  type="url"
+                  value={message.mediaUrl ?? message.imageUrl ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...message,
+                      mediaUrl: e.target.value || undefined,
+                      mediaType: message.mediaType || "image",
+                      // Clear the legacy image-only field so the two don't diverge.
+                      imageUrl: undefined,
+                    })
+                  }
+                  placeholder="https://example.com/file.mp4"
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground/60">
+                Sends an image, video, or audio file with this message.
+              </p>
             </div>
 
             {/* Quick Replies */}
