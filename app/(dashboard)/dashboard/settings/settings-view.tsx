@@ -294,24 +294,24 @@ export function SettingsView({
 
           <hr className="border-border" />
 
-          {/* AI Gateway API Key */}
+          {/* AI Provider (OmniRoute) API Key */}
           <section>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold">AI Gateway</h2>
+              <h2 className="text-sm font-semibold">AI Provider</h2>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Required for the AI Response flow node. Uses{" "}
               <a
-                href="https://vercel.com/ai-gateway"
+                href="https://omniroute.bflabs.com.br"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-0.5 text-primary underline underline-offset-2 hover:opacity-80"
               >
-                Vercel AI Gateway
+                OmniRoute
                 <ExternalLink className="h-3 w-3" />
               </a>{" "}
-              to access OpenAI, Anthropic, and Google models with a single key.
+              (self-hosted, OpenAI-compatible) to access chat models with a single key.
               {workspace.hasAiKey && " A key is currently configured."}
             </p>
 
@@ -323,7 +323,7 @@ export function SettingsView({
                 placeholder={
                   workspace.hasAiKey
                     ? "Enter a new key to replace the current one"
-                    : "Enter your AI Gateway API key"
+                    : "Enter your OmniRoute API key"
                 }
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-10 text-sm font-mono placeholder:text-muted-foreground placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-ring"
               />
@@ -343,7 +343,7 @@ export function SettingsView({
             {workspace.hasAiKey && (
               <p className="mt-1.5 flex items-center gap-1 text-xs text-green-600">
                 <Check className="h-3 w-3" />
-                AI Gateway key configured
+                OmniRoute key configured
               </p>
             )}
           </section>

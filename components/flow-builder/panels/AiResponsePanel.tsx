@@ -1,10 +1,10 @@
 "use client";
 
 const POPULAR_MODELS = [
-  { id: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
-  { id: "openai/gpt-4o", label: "GPT-4o" },
-  { id: "anthropic/claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
-  { id: "google/gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+  { id: "mimo/mimo-v2.5", label: "MiMo v2.5" },
+  { id: "cgpt-web/gpt-5.5", label: "GPT-5.5" },
+  { id: "agy/claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+  { id: "antigravity/gemini-3.1-pro-low", label: "Gemini 3.1 Pro" },
 ];
 
 interface AiResponsePanelData {
@@ -23,7 +23,7 @@ interface AiResponsePanelProps {
 
 export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProps) {
   const data = rawData as AiResponsePanelData;
-  const currentModel = data.model || "openai/gpt-4o-mini";
+  const currentModel = data.model || "mimo/mimo-v2.5";
 
   return (
     <div className="space-y-4">
@@ -53,7 +53,7 @@ export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProp
           type="text"
           value={currentModel}
           onChange={(e) => onChange({ ...data, model: e.target.value })}
-          placeholder="provider/model (e.g. openai/gpt-4o-mini)"
+          placeholder="provider/model (e.g. cgpt-web/gpt-5.4-thinking-mini)"
           className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/60 placeholder:font-sans focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -75,12 +75,12 @@ export function AiResponsePanel({ data: rawData, onChange }: AiResponsePanelProp
         <p className="mt-1.5 text-[11px] text-muted-foreground/60">
           Any model supported by{" "}
           <a
-            href="https://vercel.com/ai-gateway"
+            href="https://omniroute.bflabs.com.br"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-muted-foreground"
           >
-            Vercel AI Gateway
+            OmniRoute
           </a>
           . Format: provider/model-name
         </p>

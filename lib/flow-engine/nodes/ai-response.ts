@@ -2,14 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/types/database";
 import type { FlowExecutionContext, AiResponseNodeData } from "../types";
 import { createZernioClient } from "@/lib/zernio-client";
-import { generateText, createGateway } from "ai";
+import { streamText } from "ai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+
+export const DEFAULT_AI_MODEL = "mimo/mimo-v2.5";
 
 export async function executeAiResponse(
   supabase: SupabaseClient<Database>,
   data: AiResponseNodeData,
   context: FlowExecutionContext
 ) {
-  // Get workspace for Zernio API key + AI Gateway key
+  // Get workspace for Zernio API key + AI provider key
   const { data: workspace } = await supabase
     .from("workspaces")
     .select("late_api_key_encrypted, ai_api_key")
@@ -77,18 +80,24 @@ export async function executeAiResponse(
   }
 
   try {
-    const model = data.model || "openai/gpt-4o-mini";
-    const aiGatewayKey = workspace.ai_api_key || process.env.AI_GATEWAY_API_KEY;
-    const gw = createGateway({ apiKey: aiGatewayKey || undefined });
-    const result = await generateText({
-      model: gw(model),
+    const model = data.model || DEFAULT_AI_MODEL;
+    const omnirouteKey = workspace.ai_api_key || process.env.OMNIROUTE_API_KEY;
+    const provider = createOpenAICompatible({
+      name: "omniroute",
+      baseURL: process.env.OMNIROUTE_ENDPOINT || "http://localhost:20128/v1",
+      apiKey: omnirouteKey || undefined,
+    });
+    // OmniRoute defaults to SSE when `stream` is omitted, so streamText
+    // (which always sends stream:true) is required over generateText.
+    const result = streamText({
+      model: provider(model),
       system: data.systemPrompt || "You are a helpful customer support agent.",
       messages: aiMessages,
       temperature: data.temperature ?? 0.7,
       maxOutputTokens: data.maxTokens ?? 500,
     });
 
-    const text = result.text;
+    const text = await result.text;
 
     // Send via Zernio REST API (same pattern as executeSendMessage)
     const response = await zernio.messages.sendInboxMessage({
