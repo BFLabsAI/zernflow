@@ -514,3 +514,49 @@ create policy "flow_versions_insert" on flow_versions for insert
     where f.id = flow_versions.flow_id
       and wm.user_id = auth.uid()
   ));
+
+-- ============================================================
+-- MIGRATION 11: fix handle_new_user search_path + workspace_members
+-- RLS infinite recursion (see 00011_fix_workspace_rls_recursion.sql)
+-- ============================================================
+
+create or replace function handle_new_user()
+returns trigger as $$
+declare
+  workspace_id uuid;
+  user_name text;
+  workspace_slug text;
+begin
+  user_name := coalesce(
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'name',
+    split_part(new.email, '@', 1)
+  );
+  workspace_slug := lower(regexp_replace(user_name, '[^a-zA-Z0-9]', '-', 'g')) || '-' || substr(new.id::text, 1, 8);
+
+  insert into public.workspaces (name, slug)
+  values (user_name || '''s Workspace', workspace_slug)
+  returning id into workspace_id;
+
+  insert into public.workspace_members (workspace_id, user_id, role)
+  values (workspace_id, new.id, 'owner');
+
+  return new;
+exception when others then
+  raise log 'handle_new_user error: % %', sqlerrm, sqlstate;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create or replace function is_workspace_owner(ws_id uuid)
+returns boolean as $$
+  select exists (
+    select 1 from workspace_members
+    where workspace_id = ws_id and user_id = auth.uid() and role = 'owner'
+  );
+$$ language sql security definer stable set search_path = public;
+
+drop policy if exists "Owners can manage members" on workspace_members;
+
+create policy "Owners can manage members" on workspace_members
+  using (is_workspace_owner(workspace_id));
